@@ -2,8 +2,10 @@
 
 #include <vector>
 /*
+ * - install TFT_eSPI library
  * enable #include <User_Setups/Setup66_Seeed_XIAO_Round.h>
  * in .\Arduino\libraries\TFT_eSPI\User_Setup_Select.h
+ * - install lvgl v8.* (it wont work with v9). Copy 
  */
 #include <TFT_eSPI.h>
 #include <SPI.h>
@@ -162,6 +164,14 @@ int gifPlay( char* gifPath )
   gif.begin(BIG_ENDIAN_PIXELS);
   if( ! gif.open( gifPath, GIFOpenFile, GIFCloseFile, GIFReadFile, GIFSeekFile, GIFDraw ) ) {
     log_n("Could not open gif %s", gifPath );
+    
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor( TFT_WHITE, TFT_BLACK );
+    tft.drawString( "Could not open gif", 20, tft.height()/2 );
+    tft.drawString(String(gifPath), 20, tft.height()/2 + 40 );
+    
+    delay(300);
+
     return maxLoopsDuration;
   }
 
@@ -182,13 +192,21 @@ int gifPlay( char* gifPath )
   }
 
   while (gif.playFrame(true, &frameDelay)) {
-    if( showcomment )
-      if (gif.getComment(GifComment))
-        log_n("GIF Comment: %s", GifComment);
+    // if( showcomment )
+    //   if (gif.getComment(GifComment))
+    //     log_n("GIF Comment: %s", GifComment);
+    
     then += frameDelay;
-    if( then > maxGifDuration ) { // avoid being trapped in infinite GIF's
+
+    // check if screen tapped
+    if(chsc6x_is_pressed()){
+      Serial.println("The display is touched.");
+      tft.fillScreen(TFT_RED);
       log_w("Broke the GIF loop, max duration exceeded");
+      then = maxGifDuration;
       break;
+    } else {
+      then = 0;
     }
   }
 
@@ -223,6 +241,9 @@ int getGifInventory( const char* basePath )
   while( file ) {
     if(!file.isDirectory()) {
       GifFiles.push_back( file.name() );
+      
+      log_n("Found file: %s", file.name());
+
       amount++;
       tft.drawString(String(amount), textPosX, textPosY );
       file.close();
@@ -297,7 +318,8 @@ void loop()
   int loops = maxLoopIterations; // max loops
   int durationControl = maxLoopsDuration; // force break loop after xxx ms
 
-  while(loops-->0 && durationControl > 0 ) {
+  //while(loops-->0 && durationControl > 0 ) {
+  while(durationControl > 0 ) {
     durationControl -= gifPlay( (char*)filePath );
     gif.reset();
   }
