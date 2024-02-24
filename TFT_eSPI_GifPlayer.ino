@@ -1,3 +1,5 @@
+#define USE_TFT_ESPI_LIBRARY
+
 #include <vector>
 /*
  * enable #include <User_Setups/Setup66_Seeed_XIAO_Round.h>
@@ -9,8 +11,9 @@
 
 #include "AnimatedGIF.h"
 
+#include "lv_xiao_round_screen.h"
+
 AnimatedGIF gif;
-TFT_eSPI tft = TFT_eSPI();
 
 // rule: loop GIF at least during 3s, maximum 5 times, and don't loop/animate longer than 30s per GIF
 const int maxLoopIterations =     1; // stop after this amount of loops
@@ -234,11 +237,12 @@ int getGifInventory( const char* basePath )
 void setup()
 {
   Serial.begin(115200);
+  screen_rotation = 3;
+  xiao_disp_init();
+
   // while (!Serial) ;
   // pinMode(D6, OUTPUT);
   // digitalWrite(D6, HIGH);
-  tft.begin();
-  tft.setRotation(3);
 
   int attempts = 0;
   int maxAttempts = 50;
