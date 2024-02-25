@@ -1,11 +1,19 @@
 #define USE_TFT_ESPI_LIBRARY
 
 #include <vector>
-/*
- * - install TFT_eSPI library
+/**
+ * 1. install TFT_eSPI library
  * enable #include <User_Setups/Setup66_Seeed_XIAO_Round.h>
  * in .\Arduino\libraries\TFT_eSPI\User_Setup_Select.h
- * - install lvgl v8.* (it wont work with v9). Copy 
+ * 2. install lvgl v8.* (it wont work with v9). Copy lv_conf.h
+ * from https://github.com/Seeed-Studio/Seeed_Arduino_RoundDisplay/tree/main?tab=readme-ov-file#note
+ * as described in notes
+ * 3. Create "data" folder in SD-Card
+ * 4. Put multiple gif images with size 240x240 (use https://ezgif.com/ to resize)
+ * 
+ * 5. Print nice 3d case https://cults3d.com/en/design-collections/printminion/seeed-studio-round-display-for-xiao-1-28-inch-round-touch-screen-240x240
+ * 6. Support me: Buy Me A Coffee https://www.buymeacoffee.com/printminion
+ * 7. Follow me: https://twitter.com/printminion
  */
 #include <TFT_eSPI.h>
 #include <SPI.h>
@@ -36,6 +44,10 @@ static File FSGifFile; // temp gif file holder
 static File GifRootFolder; // directory listing
 std::vector<std::string> GifFiles; // GIF files path
 #define DISPLAY_WIDTH 240
+
+const int DO_BACK = 1;
+const int DO_NEXT = 2;
+const int DO_NOTHING = 3;
 
 static void MyCustomDelay( unsigned long ms ) {
   delay( ms );
@@ -199,53 +211,72 @@ int gifPlay( char* gifPath )
     then += frameDelay;
 
     // check if screen tapped
-    if(chsc6x_is_pressed()){
-      Serial.println("The display is touched.");
-      tft.fillScreen(TFT_RED);
-      log_w("Broke the GIF loop, max duration exceeded");
-      then = maxGifDuration;
-      break;
-    } else {
+    //if(chsc6x_is_pressed()){
+    int result = loopUI();
+
+    if (result == DO_NOTHING) {
       then = 0;
+    } else if (result == DO_NEXT) {
+      log_d("LoopUI result: %d", result);
+      then = maxGifDuration + DO_NEXT;
+      gif.close();
+      return then;
+    } else if (result == DO_BACK) {
+      log_d("LoopUI result: %d", result);
+      then = maxGifDuration + DO_BACK;
+      gif.close();
+      return then;
     }
+
+    //   // Serial.println("The display is touched.");
+    //   // tft.fillScreen(TFT_RED);
+    //   log_w("Broke the GIF loop, max duration exceeded");
+    //   //then = maxGifDuration;
+    //   //then = 0;
+    //   break;
+    // } else {
+    //   then = 0;
+    // }
   }
 
   gif.close();
   return then;
 }
 
-int getGifInventory( const char* basePath )
-{
+int getGifInventory(const char *basePath) {
   int amount = 0;
   GifRootFolder = SD.open(basePath);
-  if(!GifRootFolder){
+  if (!GifRootFolder) {
     log_n("Failed to open directory");
     return 0;
   }
 
-  if(!GifRootFolder.isDirectory()){
+  if (!GifRootFolder.isDirectory()) {
     log_n("Not a directory");
     return 0;
   }
 
   File file = GifRootFolder.openNextFile();
 
-  tft.setTextColor( TFT_WHITE, TFT_BLACK );
-  tft.setTextSize( 2 );
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.setTextSize(2);
 
-  int textPosX = tft.width()/2 - 16;
-  int textPosY = tft.height()/2 - 10;
+  int textPosX = tft.width() / 2 - 16;
+  int textPosY = tft.height() / 2 - 10;
 
-  tft.drawString("GIF Files:", textPosX-40, textPosY-20 );
+  tft.drawString("by", textPosX, textPosY - 90);
+  tft.drawString("@printminion", textPosX - 60, textPosY - 60);
 
-  while( file ) {
-    if(!file.isDirectory()) {
-      GifFiles.push_back( file.name() );
-      
+  tft.drawString("GIF Files:", textPosX - 40, textPosY + 20);
+  
+  while (file) {
+    if (!file.isDirectory()) {
+      GifFiles.push_back(file.name());
+
       log_n("Found file: %s", file.name());
 
       amount++;
-      tft.drawString(String(amount), textPosX, textPosY );
+      tft.drawString(String(amount), textPosX, textPosY + 40);
       file.close();
     }
     file = GifRootFolder.openNextFile();
@@ -255,11 +286,15 @@ int getGifInventory( const char* basePath )
   return amount;
 }
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
   screen_rotation = 3;
   xiao_disp_init();
+
+  pinMode(TOUCH_INT, INPUT_PULLUP);
+  Wire.begin();  // Turn on the IIC bus for touch driver
+
+  prepareUI();
 
   // while (!Serial) ;
   // pinMode(D6, OUTPUT);
@@ -271,7 +306,7 @@ void setup()
   bool isblinked = false;
 
   pinMode(D2, OUTPUT);
-  while(! SD.begin(D2) ) {
+  while (!SD.begin(D2)) {
     Serial.print("SD Card mount failed! (attempt ");
     Serial.print(attempts);
     Serial.print(" of ");
@@ -280,17 +315,17 @@ void setup()
     // log_n("SD Card mount failed! (attempt %d of %d)", attempts, maxAttempts );
     isblinked = !isblinked;
     attempts++;
-    if( isblinked ) {
-      tft.setTextColor( TFT_WHITE, TFT_BLACK );
+    if (isblinked) {
+      tft.setTextColor(TFT_WHITE, TFT_BLACK);
     } else {
-      tft.setTextColor( TFT_BLACK, TFT_WHITE );
+      tft.setTextColor(TFT_BLACK, TFT_WHITE);
     }
-    tft.drawString( "INSERT SD", tft.width()/2, tft.height()/2 );
+    tft.drawString("INSERT SD", tft.width() / 2, tft.height() / 2);
 
-    if( attempts > maxAttempts ) {
+    if (attempts > maxAttempts) {
       Serial.println("Giving up");
     }
-    delay( delayBetweenAttempts );
+    delay(delayBetweenAttempts);
   }
 
   // log_n("SD Card mounted!");
@@ -299,30 +334,231 @@ void setup()
   tft.begin();
   tft.fillScreen(TFT_BLACK);
 
-  totalFiles = getGifInventory( "/data" ); // scan the SD card GIF folder
+  totalFiles = getGifInventory("/data");  // scan the SD card GIF folder
+
+  showUIDemo();
+  delay(5000);
+}
+
+void showUIDemo() {
+    tft.fillScreen(TFT_BLACK);
+    drawBackButton();
+    drawNextButton();
+    int marginTop = (tft.height() / 2) + 40;
+    tft.drawString("controls", 80, 40);
+    tft.drawString("back", 40, marginTop);
+    tft.drawString("next", 165, marginTop);
+
+    // dummy button 
+    tft.drawRoundRect(95, 190, 60, 40, 5, TFT_WHITE);
+    tft.drawString("ok", 115, 200);
 
 }
 
+bool isUiDemoSeen = false;
+bool isUiDemoDisplayed = false;
 
+void loop() {
+  
+  if (!isUiDemoSeen) {
+    
+    if (!isUiDemoDisplayed) {
+      showUIDemo();
+      isUiDemoDisplayed = true;
+    }
+      
+    if (chsc6x_is_pressed()) {
+      isUiDemoSeen = true;
+    }
+    
+    delay(60);
+    return;
+  }
 
-void loop()
-{
   tft.fillScreen(TFT_BLACK);
 
-  const char * fileName = GifFiles[currentFile++%totalFiles].c_str();
-  const char * fileDir = "/data/";
-  char * filePath = (char*)malloc(strlen(fileName)+strlen(fileDir)+1);
+ 
+  const char *fileName = GifFiles[currentFile++ % totalFiles].c_str();
+  const char *fileDir = "/data/";
+  char *filePath = (char *)malloc(strlen(fileName) + strlen(fileDir) + 1);
   strcpy(filePath, fileDir);
   strcat(filePath, fileName);
 
-  int loops = maxLoopIterations; // max loops
-  int durationControl = maxLoopsDuration; // force break loop after xxx ms
+  int loops = maxLoopIterations;           // max loops
+  int durationControl = maxLoopsDuration;  // force break loop after xxx ms
 
   //while(loops-->0 && durationControl > 0 ) {
-  while(durationControl > 0 ) {
-    durationControl -= gifPlay( (char*)filePath );
+  while (durationControl > 0) {
+    int result = gifPlay((char *)filePath);
+
+    if (result == maxGifDuration + DO_BACK) {
+      durationControl = 0;
+      currentFile = currentFile - 2;
+      if (currentFile < 0) {
+        currentFile = totalFiles;
+      }
+    } else if (result == maxGifDuration + DO_NEXT) {
+      durationControl = 0;
+    } else {
+      durationControl -= result;
+    }
+
     gif.reset();
   }
   free(filePath);
+}
 
+//////////////////////////////////
+TFT_eSprite spr = TFT_eSprite(&tft);       // Sprite object
+TFT_eSprite sprRight = TFT_eSprite(&tft);  // Sprite object
+
+int xw;
+int yh;
+
+lv_coord_t touchX, touchY;
+
+bool isRightButton = false;
+bool isLeftButton = false;
+
+int triangleSideLength = 60;
+int triangleSideLengthHalf = triangleSideLength / 2;
+
+int lastTouchedX = 0;
+int lastTouchedY = 0;
+bool repaint = true;
+bool isPressedLastState = false;
+
+void prepareUI() {
+
+  xw = tft.width() / 2;  // xw, yh is middle of screen
+  yh = tft.height() / 2;
+
+  int x1 = 0;
+  int y1 = triangleSideLength;
+
+  tft.setPivot(xw, yh);  // Set pivot to middle of TFT screen
+
+  sprRight.createSprite(triangleSideLength, triangleSideLength);
+
+  // Create the Sprite
+  //spr.setColorDepth(8);
+  spr.createSprite(triangleSideLength, triangleSideLength);
+  spr.fillSprite(TFT_TRANSPARENT);
+  // spr.fillTriangle(0, 0, 0, triangleSideLength, triangleSideLength, triangleSideLengthHalf, TFT_GREEN);
+
+  spr.fillTriangle(triangleSideLength - 1, 0, triangleSideLength - 1, triangleSideLength, 0, triangleSideLengthHalf, TFT_WHITE);
+  spr.drawTriangle(triangleSideLength - 1, 0, triangleSideLength - 1, triangleSideLength, 0, triangleSideLengthHalf, TFT_BLACK);
+  
+  spr.drawWideLine(triangleSideLength - 1, 0, triangleSideLength - 1, triangleSideLength, 5, TFT_BLACK);
+  spr.drawWideLine(triangleSideLength - 1, triangleSideLength, 0, triangleSideLengthHalf, 5, TFT_BLACK);
+  spr.drawWideLine(triangleSideLength - 1, 0, 0, triangleSideLengthHalf, 5, TFT_BLACK);
+
+  //sprRight.setColorDepth(8);
+  sprRight.createSprite(triangleSideLength, triangleSideLength);
+  sprRight.fillSprite(TFT_TRANSPARENT);
+  sprRight.fillTriangle(0, 0, 0, triangleSideLength, triangleSideLength, triangleSideLengthHalf, TFT_WHITE);
+  sprRight.drawTriangle(0, 0, 0, triangleSideLength, triangleSideLength, triangleSideLengthHalf, TFT_BLACK);
+  
+  sprRight.drawWideLine(0, 0, 0, triangleSideLength, 5, TFT_BLACK);
+  sprRight.drawWideLine(0, triangleSideLength, triangleSideLength, triangleSideLengthHalf, 5, TFT_BLACK);
+  sprRight.drawWideLine(0, 0, triangleSideLength, triangleSideLengthHalf, 5, TFT_BLACK);
+}
+
+void drawBackButton() {
+    int x1 = 60;
+    int y1 = 120;
+
+    // drawX(x1, y1);
+
+    tft.setPivot(x1, y1);
+    //spr.pushRotated(180);
+    spr.pushSprite(x1 - triangleSideLengthHalf, y1 - triangleSideLengthHalf, TFT_TRANSPARENT);
+}
+
+void drawNextButton() {
+    int x1 = 190;
+    int y1 = 120;
+    // drawX(x1, y1);
+
+    tft.setPivot(x1, y1);
+    // sprRight.pushRotated(0);
+    sprRight.pushSprite(x1 - triangleSideLengthHalf, y1 - triangleSideLengthHalf, TFT_TRANSPARENT);
+}
+
+
+int loopUI() {
+  int result = DO_NOTHING;
+
+  repaint = false;
+
+  if (!chsc6x_is_pressed()) {
+    if (isPressedLastState) {
+      isPressedLastState = false;
+
+      //tft.fillScreen(TFT_SKYBLUE);
+      //tft.drawLine(0, xw, tft.width(), xw, TFT_RED);
+      //tft.drawLine(xw, 0, xw, tft.width(), TFT_BLUE);
+    }
+
+    delay(60);
+    // yield();
+    return result;
+  }
+
+  // Serial.println("The display is touched.");
+  log_d("The display is touched.");
+  // tft.fillScreen(TFT_RED);
+  chsc6x_get_xy(&touchX, &touchY);
+  log_d("%dx%d", touchX, touchY);
+
+  if (!isPressedLastState) {
+    repaint = true;
+    isPressedLastState = true;
+  }
+
+  if (lastTouchedX != touchX) {
+    lastTouchedX = touchX;
+    repaint = true;
+  }
+
+  if (lastTouchedY != touchY) {
+    lastTouchedY = touchY;
+    repaint = true;
+  }
+
+  if (!repaint) {
+    delay(60);
+    //yield();
+    return result;
+  }
+
+  //tft.fillScreen(TFT_SKYBLUE);
+
+  isRightButton = false;
+  isLeftButton = false;
+
+  if (touchX < 100) {
+    isLeftButton = true;
+  } else if (touchX > 140) {
+    isRightButton = true;
+  }
+
+  if (isLeftButton) {
+    result = DO_BACK;
+    //tft.fillCircle(touchX - 10, touchY - 10, 20, TFT_GREEN);
+    drawBackButton();
+  }
+
+  if (isRightButton) {
+    result = DO_NEXT;
+    // tft.fillCircle(touchX - 10, touchY - 10, 20, TFT_RED);
+    drawNextButton();
+  }
+
+  // tft.drawLine(0, xw, tft.width(), xw, TFT_RED);
+  //tft.drawLine(xw, 0, xw, tft.width(), TFT_BLUE);
+
+  delay(60);
+  // yield();
+  return result;
 }
