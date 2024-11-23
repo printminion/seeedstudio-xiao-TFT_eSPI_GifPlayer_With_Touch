@@ -10,7 +10,7 @@
  * as described in notes
  * 3. Create "data" folder in SD-Card
  * 4. Put multiple gif images with size 240x240 (use https://ezgif.com/ to resize)
- * 
+ *
  * 5. Print nice 3d case https://cults3d.com/en/design-collections/printminion/seeed-studio-round-display-for-xiao-1-28-inch-round-touch-screen-240x240
  * 6. Support me: Buy Me A Coffee https://www.buymeacoffee.com/printminion
  * 7. Follow me: https://twitter.com/printminion
@@ -176,12 +176,12 @@ int gifPlay( char* gifPath )
   gif.begin(BIG_ENDIAN_PIXELS);
   if( ! gif.open( gifPath, GIFOpenFile, GIFCloseFile, GIFReadFile, GIFSeekFile, GIFDraw ) ) {
     log_n("Could not open gif %s", gifPath );
-    
+
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor( TFT_WHITE, TFT_BLACK );
     tft.drawString( "Could not open gif", 20, tft.height()/2 );
     tft.drawString(String(gifPath), 20, tft.height()/2 + 40 );
-    
+
     delay(300);
 
     return maxLoopsDuration;
@@ -207,7 +207,7 @@ int gifPlay( char* gifPath )
     // if( showcomment )
     //   if (gif.getComment(GifComment))
     //     log_n("GIF Comment: %s", GifComment);
-    
+
     then += frameDelay;
 
     // check if screen tapped
@@ -268,7 +268,7 @@ int getGifInventory(const char *basePath) {
   tft.drawString("@printminion", textPosX - 60, textPosY - 60);
 
   tft.drawString("GIF Files:", textPosX - 40, textPosY + 20);
-  
+
   while (file) {
     if (!file.isDirectory()) {
       GifFiles.push_back(file.name());
@@ -349,7 +349,7 @@ void showUIDemo() {
     tft.drawString("back", 40, marginTop);
     tft.drawString("next", 165, marginTop);
 
-    // dummy button 
+    // dummy button
     tft.drawRoundRect(95, 190, 60, 40, 5, TFT_WHITE);
     tft.drawString("ok", 115, 200);
 
@@ -359,25 +359,25 @@ bool isUiDemoSeen = false;
 bool isUiDemoDisplayed = false;
 
 void loop() {
-  
+
   if (!isUiDemoSeen) {
-    
+
     if (!isUiDemoDisplayed) {
       showUIDemo();
       isUiDemoDisplayed = true;
     }
-      
+
     if (chsc6x_is_pressed()) {
       isUiDemoSeen = true;
     }
-    
+
     delay(60);
     return;
   }
 
   tft.fillScreen(TFT_BLACK);
 
- 
+
   const char *fileName = GifFiles[currentFile++ % totalFiles].c_str();
   const char *fileDir = "/data/";
   char *filePath = (char *)malloc(strlen(fileName) + strlen(fileDir) + 1);
@@ -448,7 +448,7 @@ void prepareUI() {
 
   spr.fillTriangle(triangleSideLength - 1, 0, triangleSideLength - 1, triangleSideLength, 0, triangleSideLengthHalf, TFT_WHITE);
   spr.drawTriangle(triangleSideLength - 1, 0, triangleSideLength - 1, triangleSideLength, 0, triangleSideLengthHalf, TFT_BLACK);
-  
+
   spr.drawWideLine(triangleSideLength - 1, 0, triangleSideLength - 1, triangleSideLength, 5, TFT_BLACK);
   spr.drawWideLine(triangleSideLength - 1, triangleSideLength, 0, triangleSideLengthHalf, 5, TFT_BLACK);
   spr.drawWideLine(triangleSideLength - 1, 0, 0, triangleSideLengthHalf, 5, TFT_BLACK);
@@ -458,7 +458,7 @@ void prepareUI() {
   sprRight.fillSprite(TFT_TRANSPARENT);
   sprRight.fillTriangle(0, 0, 0, triangleSideLength, triangleSideLength, triangleSideLengthHalf, TFT_WHITE);
   sprRight.drawTriangle(0, 0, 0, triangleSideLength, triangleSideLength, triangleSideLengthHalf, TFT_BLACK);
-  
+
   sprRight.drawWideLine(0, 0, 0, triangleSideLength, 5, TFT_BLACK);
   sprRight.drawWideLine(0, triangleSideLength, triangleSideLength, triangleSideLengthHalf, 5, TFT_BLACK);
   sprRight.drawWideLine(0, 0, triangleSideLength, triangleSideLengthHalf, 5, TFT_BLACK);
