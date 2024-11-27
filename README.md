@@ -29,8 +29,7 @@ Check out videos:
 ![](assets/PXL_20230611_171341001.jpg)
 
 * print case by yourself [cults3d](https://cults3d.com/en/design-collections/printminion/various-cases-for-waveshare-1-28inch-lcd-display-and-studio-xiao-esp32c3)
-* get case on [shapeways](https://www.shapeways.com/shops/printminion)
-* follow me on Twitter [@printminion](https://twitter.com/printminion)
+* follow me on X/Twitter [@printminion](https://x.com/printminion)
 
 
 Components:
