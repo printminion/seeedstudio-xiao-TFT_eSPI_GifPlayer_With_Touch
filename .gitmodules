@@ -1,0 +1,9 @@
+[submodule "libraries/Seeed_Arduino_RoundDisplay"]
+	path = libraries/Seeed_Arduino_RoundDisplay
+	url = https://github.com/Seeed-Studio/Seeed_Arduino_RoundDisplay.git
+[submodule "libraries/SeeedStudio_lvgl"]
+	path = libraries/SeeedStudio_lvgl
+	url = https://github.com/Seeed-Projects/SeeedStudio_lvgl.git
+[submodule "libraries/SeeedStudio_TFT_eSPI"]
+	path = libraries/SeeedStudio_TFT_eSPI
+	url = https://github.com/Seeed-Projects/SeeedStudio_TFT_eSPI.git
