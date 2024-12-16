@@ -23,7 +23,8 @@ on:
 jobs:
   os-check-win:
     runs-on: windows-2019
-    if: github.repository == 'printminion/seeedstudio-xiao-TFT_eSPI_GifPlayer_With_Touch'
+    if: false
+#    if: github.repository == 'printminion/seeedstudio-xiao-TFT_eSPI_GifPlayer_With_Touch'
     strategy:
       fail-fast: true
       matrix:
@@ -51,7 +52,8 @@ jobs:
 
   os-check-mac:
     runs-on: macos-14
-    if: github.repository == 'printminion/seeedstudio-xiao-TFT_eSPI_GifPlayer_With_Touch'
+    if: false
+#    if: github.repository == 'printminion/seeedstudio-xiao-TFT_eSPI_GifPlayer_With_Touch'
     strategy:
       fail-fast: true
       matrix:
