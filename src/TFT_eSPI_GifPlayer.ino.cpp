@@ -417,7 +417,6 @@ void setup() {
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
     tft.drawString("@printminion", tft.width() / 2 - 65, tft.height() / 2 + 40);
     tft.drawString("v1.0.0", tft.width() / 2 - 40, tft.height() / 2 + 70);
-    
 
     if (attempts > maxAttempts) {
       //Serial.println("Giving up");
