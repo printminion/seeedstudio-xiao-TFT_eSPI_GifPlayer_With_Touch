@@ -9,6 +9,8 @@
 #define USE_TFT_ESPI_LIBRARY
 #include "lv_xiao_round_screen.h"
 
+#include <Arduino.h>
+
 #include <vector>
 #include <SD.h>
 #include "AnimatedGIF.h"
@@ -75,6 +77,24 @@ unsigned long startTimeMs = 0;
 
 bool isUiDemoSeen = false;
 bool isUiDemoDisplayed = false;
+
+static void * GIFOpenFile(const char *fname, int32_t *pSize);
+static void GIFCloseFile(void *pHandle);
+static int32_t GIFReadFile(GIFFILE *pFile, uint8_t *pBuf, int32_t iLen);
+static int32_t GIFSeekFile(GIFFILE *pFile, int32_t iPosition);
+static void TFTDraw(int x, int y, int w, int h, uint16_t* lBuf);
+void GIFDraw(GIFDRAW *pDraw);
+int gifPlay(char* gifPath);
+int getGifInventory(const char *basePath);
+void showUIDemo(bool showControls);
+void prepareUI();
+void drawBackButton(bool selected);
+void drawNextButton(bool selected);
+void drawModeSwitchButton(bool selected);
+void switchMode();
+bool isPointInRect(int touchX, int touchY, int topX, int topY, int rectWidth, int rectHeight);
+bool isPointInCenteredRect(int touchX, int touchY, int topX, int topY, int rectWidth, int rectHeight);
+int loopUI();
 
 static void * GIFOpenFile(const char *fname, int32_t *pSize)
 {
@@ -393,6 +413,11 @@ void setup() {
 
     tft.drawBitmap(36, tft.height() / 2, image_micro_sd_no_card_bits, 14, 16, 0xFFFF);
     tft.drawString("INSERT SD", tft.width() / 2 - 50, tft.height() / 2);
+
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.drawString("@printminion", tft.width() / 2 - 65, tft.height() / 2 + 40);
+    tft.drawString("v1.0.0", tft.width() / 2 - 40, tft.height() / 2 + 70);
+    
 
     if (attempts > maxAttempts) {
       //Serial.println("Giving up");
