@@ -1,4 +1,3 @@
-
 name: Build_development
 
 env:
@@ -20,7 +19,8 @@ concurrency:
 jobs:
   be_solidify:
     runs-on: ubuntu-latest
-    if: github.repository == env.SOURCE_REPO && github.ref_name == 'development'
+    if: false
+#    if: github.repository == env.SOURCE_REPO && github.ref_name == 'development'
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +61,8 @@ jobs:
   push_solidified:
     needs: be_solidify
     runs-on: ubuntu-latest
-    if: github.repository == env.SOURCE_REPO && github.ref_name == 'development'
+    if: false
+#    if: github.repository == env.SOURCE_REPO && github.ref_name == 'development'
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
@@ -188,21 +189,7 @@ jobs:
     strategy:
       matrix:
         variant:
-          - tasmota32
-          - tasmota32-zbbrdgpro
-          - tasmota32-webcam
-          - tasmota32-bluetooth
-          - tasmota32-nspanel
-          - tasmota32-display
-          - tasmota32-ir
-          - tasmota32-lvgl
-          - tasmota32c2
-          - tasmota32c3
-          - tasmota32c6
-          - tasmota32s2
-          - tasmota32s2cdc
-          - tasmota32s3
-          - tasmota32solo1
+          - seeed_xiao_esp32c3
     steps:
       - uses: actions/checkout@v4
         with:
@@ -234,48 +221,50 @@ jobs:
           name: firmware
           path: ./build_output
 
-  language-images:
-    needs: safeboot-images
-    runs-on: ubuntu-latest
-    if: github.repository == env.SOURCE_REPO
-    continue-on-error: true
-    strategy:
-      matrix:
-        variant: [ tasmota, tasmota32 ]
-        language: [ AD, AF, BG, BR, CN, CZ, DE, ES, FR, FY, GR, HE, HU, IT, KO, NL, PL, PT, RO, RU, SE, SK, TR, TW, UK, VN ]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: development
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install dependencies
-        run: |
-          pip install wheel
-          pip install -U platformio
-          cp ./platformio_override_sample.ini ./platformio_override.ini
-      - name: Download safeboot firmwares
-        uses: jason2866/download-artifact@v3.0.4
-        with:
-          name: firmware_safeboot
-          path: ./firmware
-      - name: Add SHA to footer
-        run: |
-          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
-          SHA=${COMMIT_SHA_LONG::7}
-          sed -i -e "s/TASMOTA_SHA_SHORT/TASMOTA_SHA_SHORT $SHA-/g" ./tasmota/include/tasmota_version.h
-      - name: Run PlatformIO
-        run: platformio run -e ${{ matrix.variant }}-${{ matrix.language }}
-      - name: Upload language firmware artifacts
-        uses: jason2866/upload-artifact@v2.0.3
-        with:
-          name: firmware
-          path: ./build_output
+#  language-images:
+#    needs: safeboot-images
+#    runs-on: ubuntu-latest
+#    if: false
+##    if: github.repository == env.SOURCE_REPO
+#    continue-on-error: true
+#    strategy:
+#      matrix:
+#        variant: [ tasmota, tasmota32 ]
+#        language: [ AD, AF, BG, BR, CN, CZ, DE, ES, FR, FY, GR, HE, HU, IT, KO, NL, PL, PT, RO, RU, SE, SK, TR, TW, UK, VN ]
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: development
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.x'
+#      - name: Install dependencies
+#        run: |
+#          pip install wheel
+#          pip install -U platformio
+#          cp ./platformio_override_sample.ini ./platformio_override.ini
+#      - name: Download safeboot firmwares
+#        uses: jason2866/download-artifact@v3.0.4
+#        with:
+#          name: firmware_safeboot
+#          path: ./firmware
+#      - name: Add SHA to footer
+#        run: |
+#          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
+#          SHA=${COMMIT_SHA_LONG::7}
+#          sed -i -e "s/TASMOTA_SHA_SHORT/TASMOTA_SHA_SHORT $SHA-/g" ./tasmota/include/tasmota_version.h
+#      - name: Run PlatformIO
+#        run: platformio run -e ${{ matrix.variant }}-${{ matrix.language }}
+#      - name: Upload language firmware artifacts
+#        uses: jason2866/upload-artifact@v2.0.3
+#        with:
+#          name: firmware
+#          path: ./build_output
 
   Start_final_copy:
-    needs: [base-images, base32-images, language-images]
+    needs: [base-images, base32-images]
+#    needs: [base-images, base32-images, language-images]
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch workflow in arendst/Tasmota-firmware
