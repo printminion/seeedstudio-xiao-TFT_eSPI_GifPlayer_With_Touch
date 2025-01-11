@@ -105,8 +105,9 @@ jobs:
         run: platformio run -e ${{ matrix.variant }}
       - uses: jason2866/upload-artifact@v2.0.3
         with:
-          name: firmware
-          path: ./build_output
+          name: firmware ${{ matrix.variant }}
+#          path: ./build_output
+          path: ./.pio/build/${{ matrix.variant }}/
 
   language-images:
     runs-on: ubuntu-latest
