@@ -9,13 +9,24 @@ from colorama import Fore, Back, Style
 
 
 def bin_map_copy(source, target, env):
+    print(Fore.GREEN + "Copying firmware.bin and firmware.map to final destination")
+    print(Fore.GREEN + "Source: {}".format(source[0].path))
+    print(Fore.GREEN + "Target: {}".format(target[0].path))
+    print(Fore.GREEN + "Environment: {}".format(env["PIOENV"]))
+    print(Fore.GREEN + "Platform: {}".format(env["PIOPLATFORM"]))
+
     firsttarget = pathlib.Path(target[0].path)
+    print(Fore.GREEN + "First target: {}".format(firsttarget))
 
     # get locations and file names based on variant
     map_file = tasmotapiolib.get_final_map_path(env)
     bin_file = tasmotapiolib.get_final_bin_path(env)
     one_bin_file = bin_file
     firmware_name = env.subst("$BUILD_DIR/${PROGNAME}.bin")
+
+    print(Fore.GREEN + "Map file: {}".format(map_file))
+    print(Fore.GREEN + "Bin file: {}".format(bin_file))
+    print(Fore.GREEN + "Firmware name: {}".format(firmware_name))
 
     if env["PIOPLATFORM"] == "espressif32":
         if("safeboot" in firmware_name):
@@ -25,14 +36,20 @@ def bin_map_copy(source, target, env):
                         SAFEBOOT_SIZE
                     )
                 )
-        if("safeboot" not in firmware_name):
+        if "safeboot" not in firmware_name:
             factory_tmp = pathlib.Path(firsttarget).with_suffix("")
             factory = factory_tmp.with_suffix(factory_tmp.suffix + ".factory.bin")
             one_bin_tmp = pathlib.Path(bin_file).with_suffix("")
             one_bin_file = one_bin_tmp.with_suffix(one_bin_tmp.suffix + ".factory.bin")
 
+    print(Fore.GREEN + "map_file: {}".format(map_file))
+    print(Fore.GREEN + "bin_file: {}".format(bin_file))
+    print(Fore.GREEN + "one_bin_file: {}".format(one_bin_file))
+    print(Fore.GREEN + "firsttarget: {}".format(firsttarget))
+
     # check if new target files exist and remove if necessary
-    for f in [map_file, bin_file, one_bin_file]:
+    # for f in [map_file, bin_file, one_bin_file]:
+    for f in [map_file, bin_file]:
         if f.is_file():
             f.unlink()
 
@@ -41,10 +58,11 @@ def bin_map_copy(source, target, env):
     if env["PIOPLATFORM"] == "espressif32":
         # the map file is needed later for firmware-metrics.py
         shutil.copy(tasmotapiolib.get_source_map_path(env), map_file)
-        if("safeboot" not in firmware_name):
-            shutil.copy(factory, one_bin_file)
+        # if ("safeboot" not in firmware_name):
+        #     shutil.copy(factory, one_bin_file)
     else:
         map_firm = join(env.subst("$BUILD_DIR")) + os.sep + "firmware.map"
+        print(Fore.GREEN + "Map file: {}".format(map_firm))
         shutil.copy(tasmotapiolib.get_source_map_path(env), map_firm)
         shutil.move(tasmotapiolib.get_source_map_path(env), map_file)
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", bin_map_copy)
