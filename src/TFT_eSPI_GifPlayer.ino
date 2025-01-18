@@ -7,7 +7,10 @@
  * 6. Follow me: https://twitter.com/printminion
  */
 #define USE_TFT_ESPI_LIBRARY
+#include <stdint.h>
+#include "include/version.h"
 #include "lv_xiao_round_screen.h"
+#define STR(tok) tok
 
 #include <Arduino.h>
 
@@ -18,6 +21,11 @@
 
 static const unsigned char PROGMEM image_micro_sd_no_card_bits[] = {0x3f,0xc0,0xa0,0x20,0x40,0x20,0x60,0x20,0x53,0x30,0x48,0x90,0x4c,0x88,0x42,0x08,0x49,0x10,0x4a,0x90,0x44,0xc8,0x40,0x28,0x47,0x90,0x58,0x68,0x37,0xd4,0x00,0x00};
 static const unsigned char PROGMEM image_file_search_bits[] = {0x01,0xf0,0x02,0x08,0x04,0x04,0x08,0x02,0x08,0x02,0x08,0x0a,0x08,0x0a,0x08,0x12,0x04,0x64,0x0a,0x08,0x15,0xf0,0x28,0x00,0x50,0x00,0xa0,0x00,0xc0,0x00,0x00,0x00};
+
+struct AppGlobal_t {
+  char image_name[33];                      // Code image and/or commit
+  char version[16];                         // Composed version string like 255.255.255.255
+} AppGlobal = { 0 };
 
 Preferences preferences;
 AnimatedGIF gif;
@@ -341,6 +349,13 @@ int getGifInventory(const char *basePath) {
 }
 
 void setup() {
+
+  snprintf_P(AppGlobal.image_name, sizeof(AppGlobal.image_name), PSTR("(" STR(APP_SHA_SHORT) "%s)"), PSTR(CODE_IMAGE_STR));  // Results in (fffffff-app) or (release-app)
+  snprintf_P(AppGlobal.version, sizeof(AppGlobal.version), PSTR("%d.%d.%d"), APP_VERSION >> 24 & 0xff, APP_VERSION >> 16 & 0xff, APP_VERSION >> 8 & 0xff);  // Release version 6.3.0
+
+  log_n("app version :%s", AppGlobal.version);
+  log_n("app sha: %s", AppGlobal.image_name);
+
   //Serial.begin(115200);
 
   // Open Preferences with my-app namespace. Each application module, library, etc
@@ -411,13 +426,20 @@ void setup() {
       tft.setTextColor(TFT_BLACK, TFT_WHITE);
     }
 
-    tft.drawBitmap(36, tft.height() / 2, image_micro_sd_no_card_bits, 14, 16, 0xFFFF);
-    tft.drawString("INSERT SD", tft.width() / 2 - 50, tft.height() / 2);
+    int marginTop = (tft.height() / 2) - 15;
+    int middleLine = tft.width() / 2;
+
+    //tft.drawLine(0, middleLine, tft.width(), middleLine, TFT_RED);
+    //tft.drawLine(middleLine, 0, middleLine, tft.height(), TFT_RED);
+
+    tft.drawBitmap(36, marginTop, image_micro_sd_no_card_bits, 14, 16, 0xFFFF);
+    tft.drawString("INSERT SD", middleLine - 50, marginTop);
 
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
-    tft.drawString("@printminion", tft.width() / 2 - 65, tft.height() / 2 + 40);
-    tft.drawString("v1.0.0", tft.width() / 2 - 40, tft.height() / 2 + 70);
-    
+    tft.drawString("@printminion", middleLine - 65, marginTop + 30);
+    tft.drawString(AppGlobal.version, middleLine - 30, marginTop + 60);
+    tft.drawString(AppGlobal.image_name, middleLine - 50, marginTop + 90);
+
 
     if (attempts > maxAttempts) {
       //Serial.println("Giving up");
