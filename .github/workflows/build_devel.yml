@@ -31,112 +31,112 @@ jobs:
           #- name: Install clang compiler
           #run: |
           #sudo apt-get install -f clang
-      - name: Make Berry and Tasmota Berry code
-        run: |
-          cd lib/libesp32/berry
-          make
-          cd ../berry_tasmota
-          ../berry/berry -s -g solidify_all.be
-      - name: Matter Berry Code
-        run: |
-          cd lib/libesp32/berry_matter
-          ../berry/berry -s -g solidify_all.be
-      - name: Berry Animate Code
-        run: |
-          cd lib/libesp32/berry_animate
-          ../berry/berry -s -g solidify_all.be
-      - name: LVGL Berry Code
-        run: |
-          cd lib/libesp32_lvgl/lv_binding_berry
-          ../../libesp32/berry/berry -s -g solidify_all.be
-      - name: HASPmota Berry Code
-        run: |
-          cd lib/libesp32_lvgl/lv_haspmota
-          ../../libesp32/berry/berry -s -g solidify_all.be
-      - uses: jason2866/upload-artifact@v2.0.3
-        with:
-          name: '["berry_tasmota", "berry_matter", "berry_animate", "berry_lvgl", "berry_haspmota", "berry_header"]'
-          path: '["./lib/libesp32/berry_tasmota/src/solidify", "./lib/libesp32/berry_matter/src/solidify", "./lib/libesp32/berry_animate/src/solidify", "./lib/libesp32_lvgl/lv_binding_berry/src/solidify", "./lib/libesp32_lvgl/lv_haspmota/src/solidify", "./lib/libesp32/berry/generate"]'
+#      - name: Make Berry and Tasmota Berry code
+#        run: |
+#          cd lib/libesp32/berry
+#          make
+#          cd ../berry_tasmota
+#          ../berry/berry -s -g solidify_all.be
+#      - name: Matter Berry Code
+#        run: |
+#          cd lib/libesp32/berry_matter
+#          ../berry/berry -s -g solidify_all.be
+#      - name: Berry Animate Code
+#        run: |
+#          cd lib/libesp32/berry_animate
+#          ../berry/berry -s -g solidify_all.be
+#      - name: LVGL Berry Code
+#        run: |
+#          cd lib/libesp32_lvgl/lv_binding_berry
+#          ../../libesp32/berry/berry -s -g solidify_all.be
+#      - name: HASPmota Berry Code
+#        run: |
+#          cd lib/libesp32_lvgl/lv_haspmota
+#          ../../libesp32/berry/berry -s -g solidify_all.be
+#      - uses: jason2866/upload-artifact@v2.0.3
+#        with:
+#          name: '["berry_tasmota", "berry_matter", "berry_animate", "berry_lvgl", "berry_haspmota", "berry_header"]'
+#          path: '["./lib/libesp32/berry_tasmota/src/solidify", "./lib/libesp32/berry_matter/src/solidify", "./lib/libesp32/berry_animate/src/solidify", "./lib/libesp32_lvgl/lv_binding_berry/src/solidify", "./lib/libesp32_lvgl/lv_haspmota/src/solidify", "./lib/libesp32/berry/generate"]'
 
-  push_solidified:
-    needs: be_solidify
-    runs-on: ubuntu-latest
-    if: false
-#    if: github.repository == env.SOURCE_REPO && github.ref_name == 'development'
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - uses: jason2866/download-artifact@v3.0.4
-        with:
-          name: |
-            berry_tasmota
-            berry_matter
-            berry_animate
-            berry_lvgl
-            berry_haspmota
-            berry_header
-          path: |
-            ./lib/libesp32/berry_tasmota/src/solidify
-            ./lib/libesp32/berry_matter/src/solidify
-            ./lib/libesp32/berry_animate/src/solidify
-            ./lib/libesp32_lvgl/lv_binding_berry/src/solidify
-            ./lib/libesp32_lvgl/lv_haspmota/src/solidify
-            ./lib/libesp32/berry/generate
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Solidified Code updated
+#  push_solidified:
+#    needs: be_solidify
+#    runs-on: ubuntu-latest
+#    if: false
+##    if: github.repository == env.SOURCE_REPO && github.ref_name == 'development'
+#    continue-on-error: true
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.x'
+#      - uses: jason2866/download-artifact@v3.0.4
+#        with:
+#          name: |
+#            berry_tasmota
+#            berry_matter
+#            berry_animate
+#            berry_lvgl
+#            berry_haspmota
+#            berry_header
+#          path: |
+#            ./lib/libesp32/berry_tasmota/src/solidify
+#            ./lib/libesp32/berry_matter/src/solidify
+#            ./lib/libesp32/berry_animate/src/solidify
+#            ./lib/libesp32_lvgl/lv_binding_berry/src/solidify
+#            ./lib/libesp32_lvgl/lv_haspmota/src/solidify
+#            ./lib/libesp32/berry/generate
+#      - uses: stefanzweifel/git-auto-commit-action@v5
+#        with:
+#          commit_message: Solidified Code updated
 
-  safeboot-images:
-    needs: push_solidified
-    runs-on: ubuntu-latest
-    if: github.repository == env.SOURCE_REPO
-    continue-on-error: true
-    strategy:
-      matrix:
-        variant:
-          - tasmota32-safeboot
-          - tasmota32solo1-safeboot
-          - tasmota32c2-safeboot
-          - tasmota32c3-safeboot
-          - tasmota32c3ser-safeboot
-          - tasmota32s2-safeboot
-          - tasmota32s2cdc-safeboot
-          - tasmota32s3-safeboot
-          - tasmota32s3ser-safeboot
-          - tasmota32c6-safeboot
-          - tasmota32c6ser-safeboot
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: development
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install dependencies
-        run: |
-          pip install wheel
-          pip install -U platformio
-          cp ./platformio_override_sample.ini ./platformio_override.ini
-      - name: Add SHA to footer
-        run: |
-          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
-          SHA=${COMMIT_SHA_LONG::7}
-          sed -i -e "s/TASMOTA_SHA_SHORT/TASMOTA_SHA_SHORT $SHA-/g" ./tasmota/include/tasmota_version.h
-      - name: Run PlatformIO
-        run: platformio run -e ${{ matrix.variant }}
-          #- name: Use esp32-solo1 safeboot for esp32 too
-          #run: |
-        #cp ./build_output/firmware/tasmota32solo1-safeboot.bin ./build_output/firmware/tasmota32-safeboot.bin
-      - name: Upload safeboot firmware artifacts
-        uses: jason2866/upload-artifact@v2.0.3
-        with:
-          name: firmware_safeboot
-          path: ./build_output
+#  safeboot-images:
+#    needs: push_solidified
+#    runs-on: ubuntu-latest
+#    if: github.repository == env.SOURCE_REPO
+#    continue-on-error: true
+#    strategy:
+#      matrix:
+#        variant:
+#          - tasmota32-safeboot
+#          - tasmota32solo1-safeboot
+#          - tasmota32c2-safeboot
+#          - tasmota32c3-safeboot
+#          - tasmota32c3ser-safeboot
+#          - tasmota32s2-safeboot
+#          - tasmota32s2cdc-safeboot
+#          - tasmota32s3-safeboot
+#          - tasmota32s3ser-safeboot
+#          - tasmota32c6-safeboot
+#          - tasmota32c6ser-safeboot
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: development
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.x'
+#      - name: Install dependencies
+#        run: |
+#          pip install wheel
+#          pip install -U platformio
+#          cp ./platformio_override_sample.ini ./platformio_override.ini
+#      - name: Add SHA to footer
+#        run: |
+#          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
+#          SHA=${COMMIT_SHA_LONG::7}
+#          sed -i -e "s/TASMOTA_SHA_SHORT/TASMOTA_SHA_SHORT $SHA-/g" ./tasmota/include/tasmota_version.h
+#      - name: Run PlatformIO
+#        run: platformio run -e ${{ matrix.variant }}
+#          #- name: Use esp32-solo1 safeboot for esp32 too
+#          #run: |
+#        #cp ./build_output/firmware/tasmota32solo1-safeboot.bin ./build_output/firmware/tasmota32-safeboot.bin
+#      - name: Upload safeboot firmware artifacts
+#        uses: jason2866/upload-artifact@v2.0.3
+#        with:
+#          name: firmware_safeboot
+#          path: ./build_output
 
   base-images:
     needs: push_solidified
@@ -146,16 +146,8 @@ jobs:
     strategy:
       matrix:
         variant:
-          - tasmota
-          - tasmota-4M
-          - tasmota-minimal
-          - tasmota-display
-          - tasmota-ir
-          - tasmota-knx
-          - tasmota-lite
-          - tasmota-sensors
-          - tasmota-zbbridge
-          - tasmota-zigbee
+          - seeed_xiao_esp32c3
+          - seeed_xiao_esp32s3
     steps:
       - uses: actions/checkout@v4
         with:
@@ -172,7 +164,7 @@ jobs:
         run: |
           COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
           SHA=${COMMIT_SHA_LONG::7}
-          sed -i -e "s/TASMOTA_SHA_SHORT/TASMOTA_SHA_SHORT $SHA-/g" ./tasmota/include/tasmota_version.h
+          sed -i -e "s/APP_SHA_SHORT/APP_SHA_SHORT $SHA-/g" ./src/include/version.h
       - name: Run PlatformIO
         run: platformio run -e ${{ matrix.variant }}
       - name: Upload firmware artifacts
@@ -181,45 +173,45 @@ jobs:
           name: firmware
           path: ./build_output
 
-  base32-images:
-    needs: safeboot-images
-    runs-on: ubuntu-latest
-    if: github.repository == env.SOURCE_REPO
-    continue-on-error: true
-    strategy:
-      matrix:
-        variant:
-          - seeed_xiao_esp32c3
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: development
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install dependencies
-        run: |
-          pip install wheel
-          pip install -U platformio
-          cp ./platformio_override_sample.ini ./platformio_override.ini
-      - name: Download safeboot firmwares
-        uses: jason2866/download-artifact@v3.0.4
-        with:
-          name: firmware_safeboot
-          path: ./firmware
-      - name: Add SHA to footer
-        run: |
-          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
-          SHA=${COMMIT_SHA_LONG::7}
-          sed -i -e "s/TASMOTA_SHA_SHORT/TASMOTA_SHA_SHORT $SHA-/g" ./tasmota/include/tasmota_version.h
-      - name: Run PlatformIO
-        run: platformio run -e ${{ matrix.variant }}
-      - name: Upload firmware artifacts
-        uses: jason2866/upload-artifact@v2.0.3
-        with:
-          name: firmware
-          path: ./build_output
+#  base32-images:
+#    needs: safeboot-images
+#    runs-on: ubuntu-latest
+#    if: github.repository == env.SOURCE_REPO
+#    continue-on-error: true
+#    strategy:
+#      matrix:
+#        variant:
+#          - seeed_xiao_esp32c3
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: development
+#      - name: Set up Python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.x'
+#      - name: Install dependencies
+#        run: |
+#          pip install wheel
+#          pip install -U platformio
+#          cp ./platformio_override_sample.ini ./platformio_override.ini
+#      - name: Download safeboot firmwares
+#        uses: jason2866/download-artifact@v3.0.4
+#        with:
+#          name: firmware_safeboot
+#          path: ./firmware
+#      - name: Add SHA to footer
+#        run: |
+#          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
+#          SHA=${COMMIT_SHA_LONG::7}
+#          sed -i -e "s/TASMOTA_SHA_SHORT/TASMOTA_SHA_SHORT $SHA-/g" ./tasmota/include/tasmota_version.h
+#      - name: Run PlatformIO
+#        run: platformio run -e ${{ matrix.variant }}
+#      - name: Upload firmware artifacts
+#        uses: jason2866/upload-artifact@v2.0.3
+#        with:
+#          name: firmware
+#          path: ./build_output
 
 #  language-images:
 #    needs: safeboot-images
@@ -263,13 +255,13 @@ jobs:
 #          path: ./build_output
 
   Start_final_copy:
-    needs: [base-images, base32-images]
+    needs: [base-images]
 #    needs: [base-images, base32-images, language-images]
     runs-on: ubuntu-latest
     steps:
-      - name: Dispatch workflow in arendst/Tasmota-firmware
+      - name: Dispatch workflow in printminion/esp-gif-frame-firmware
         run: |
-          curl -X POST https://api.github.com/repos/arendst/Tasmota-firmware/actions/workflows/fetch_deploy.yml/dispatches \
+          curl -X POST https://api.github.com/repos/printminion/esp-gif-frame-firmware/actions/workflows/fetch_deploy.yml/dispatches \
           -H 'Accept: application/vnd.github.everest-preview+json' \
           -u ${{ secrets.API_TOKEN_GITHUB }} \
           --data '{"ref": "gh_actions"}'
