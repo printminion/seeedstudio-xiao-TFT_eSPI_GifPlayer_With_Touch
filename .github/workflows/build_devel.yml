@@ -15,8 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  base-images:
+  base_images:
     runs-on: ubuntu-latest
+
     if: github.repository == 'printminion/seeedstudio-xiao-TFT_eSPI_GifPlayer_With_Touch'
     continue-on-error: true
     strategy:
@@ -24,74 +25,48 @@ jobs:
         variant:
           - seeed_xiao_esp32c3
           - seeed_xiao_esp32s3
+
     steps:
       - uses: actions/checkout@v4
         with:
           ref: development
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+
       - name: Install dependencies
         run: |
           pip install wheel
           pip install -U platformio
+
       - name: Add SHA to footer
         run: |
           COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
           SHA=${COMMIT_SHA_LONG::7}
-          sed -i -e "s/APP_SHA_SHORT/APP_SHA_SHORT $SHA-/g" ./src/include/version.h
+          sed -i -e "s/APP_SHA_SHORT/APP_SHA_SHORT \"$SHA\"/g" ./src/include/version.h
+
       - name: Run PlatformIO
+        id: build
         run: platformio run -e ${{ matrix.variant }}
+
       - name: Upload firmware artifacts
         uses: jason2866/upload-artifact@v2.0.3
         with:
           name: firmware
           path: ./build_output
 
-#  base32-images:
-#    needs: safeboot-images
-#    runs-on: ubuntu-latest
-#    if: github.repository == env.SOURCE_REPO
-#    continue-on-error: true
-#    strategy:
-#      matrix:
-#        variant:
-#          - seeed_xiao_esp32c3
-#    steps:
-#      - uses: actions/checkout@v4
-#        with:
-#          ref: development
-#      - name: Set up Python
-#        uses: actions/setup-python@v5
-#        with:
-#          python-version: '3.x'
-#      - name: Install dependencies
-#        run: |
-#          pip install wheel
-#          pip install -U platformio
-#          cp ./platformio_override_sample.ini ./platformio_override.ini
-#      - name: Download safeboot firmwares
-#        uses: jason2866/download-artifact@v3.0.4
-#        with:
-#          name: firmware_safeboot
-#          path: ./firmware
-#      - name: Add SHA to footer
-#        run: |
-#          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
-#          SHA=${COMMIT_SHA_LONG::7}
-#          sed -i -e "s/APP_SHA_SHORT/APP_SHA_SHORT $SHA-/g" ./src/include/version.h
-#      - name: Run PlatformIO
-#        run: platformio run -e ${{ matrix.variant }}
-#      - name: Upload firmware artifacts
-#        uses: jason2866/upload-artifact@v2.0.3
-#        with:
-#          name: firmware
-#          path: ./build_output
-
+      - name: Show changes on failure
+        if: failure()
+        run: |
+          git status
+          git --no-pager diff
+          exit 1 # make it red to grab attention
 
   start_final_copy:
-    needs: [base-images]
+    needs: [base_images]
+    if: !failure()
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch workflow in printminion/esp-gif-frame-firmware
