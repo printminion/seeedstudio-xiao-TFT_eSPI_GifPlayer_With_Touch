@@ -30,10 +30,12 @@ jobs:
           - seeed_xiao_esp32s3
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+
       - name: Install dependencies
         run: |
           pip install wheel
@@ -41,9 +43,10 @@ jobs:
           pip install -U platformio
           #platformio upgrade --dev
           #platformio update
-#          cp ./platformio_override_sample.ini ./platformio_override.ini
+
       - name: Run PlatformIO
         run: platformio run -e ${{ matrix.variant }}
+
       - uses: jason2866/upload-artifact@v2.0.3
         with:
           name: firmware ${{ matrix.variant }}
