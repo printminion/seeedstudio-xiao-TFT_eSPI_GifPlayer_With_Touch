@@ -23,8 +23,8 @@ jobs:
     strategy:
       matrix:
         variant:
-          - seeed_xiao_esp32c3
-          - seeed_xiao_esp32s3
+          - app_seeed_xiao_esp32c3-seeed_touch_104030087
+          - app_seeed_xiao_esp32s3-seeed_touch_104030087
 
     steps:
       - uses: actions/checkout@v4
