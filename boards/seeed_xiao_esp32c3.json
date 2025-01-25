@@ -11,7 +11,7 @@
     ],
     "f_cpu": "160000000L",
     "f_flash": "80000000L",
-    "flash_mode": "qio",
+    "flash_mode": "dio",
     "hwids": [
       [
         "0x2886",
@@ -35,7 +35,7 @@
     "arduino",
     "espidf"
   ],
-  "name": "Seeed Studio XIAO ESP32C3",
+  "name": "Seeed Studio XIAO ESP32C3 (printminion)",
   "upload": {
     "flash_size": "4MB",
     "maximum_ram_size": 327680,
