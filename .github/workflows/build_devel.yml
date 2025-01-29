@@ -1,4 +1,4 @@
-name: Build_development
+name: Build development
 
 on:
   workflow_dispatch:      # Start a workflow
@@ -19,8 +19,9 @@ jobs:
     runs-on: ubuntu-latest
 
     if: github.repository == 'printminion/seeedstudio-xiao-TFT_eSPI_GifPlayer_With_Touch'
-    continue-on-error: true
+    continue-on-error: false
     strategy:
+      fail-fast: false
       matrix:
         variant:
           - app_seeed_xiao_esp32c3-seeed_touch_104030087
@@ -64,6 +65,7 @@ jobs:
           git --no-pager diff
           exit 1 # make it red to grab attention
 
+  # run start_final_copy only if base_images is successful
   start_final_copy:
     needs: [base_images]
     if: success()
