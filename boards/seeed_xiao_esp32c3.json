@@ -23,7 +23,8 @@
       ] 
     ],
     "mcu": "esp32c3",
-    "variant": "XIAO_ESP32C3"
+    "variant": "XIAO_ESP32C3",
+    "partitions": "partitions/esp32_partition_app2880k_fs320k.csv"
   },
   "connectivity": [
     "wifi"

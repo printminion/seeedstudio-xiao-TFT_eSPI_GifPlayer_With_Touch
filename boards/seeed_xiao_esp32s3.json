@@ -28,7 +28,8 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "XIAO_ESP32S3"
+    "variant": "XIAO_ESP32S3",
+    "partitions": "partitions/esp32_partition_app2880k_fs320k.csv"
   },
   "connectivity": [
     "bluetooth",
