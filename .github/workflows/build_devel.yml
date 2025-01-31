@@ -57,6 +57,9 @@ jobs:
 
       - name: Upload firmware artifacts
         uses: jason2866/upload-artifact@v2.0.3
+        env:
+          ACTIONS_STEP_DEBUG: true
+          ACTIONS_RUNNER_DEBUG: true
         with:
           name: firmware
           path: ./build_output
