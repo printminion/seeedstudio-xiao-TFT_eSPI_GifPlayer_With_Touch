@@ -43,7 +43,9 @@ variants_dir = env.BoardConfig().get("build.variants_dir", "")
 variant = env.BoardConfig().get("build.variant", "")
 sections = env.subst(env.get("FLASH_EXTRA_IMAGES"))
 chip = env.get("BOARD_MCU")
-mcu_build_variant = env.BoardConfig().get("build.variant", "").lower()
+# preserve case of variant folder - it is case senecetive
+# mcu_build_variant = env.BoardConfig().get("build.variant", "").lower()
+mcu_build_variant = env.BoardConfig().get("build.variant", "")
 flag_custom_sdkconfig = config.has_option("env:"+env["PIOENV"], "custom_sdkconfig")
 flag_board_sdkconfig = env.BoardConfig().get("espidf.custom_sdkconfig", "")
 
