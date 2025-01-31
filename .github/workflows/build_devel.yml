@@ -52,6 +52,9 @@ jobs:
         id: build
         run: platformio run -e ${{ matrix.variant }}
 
+      - name: Check build_output folder contents recursively
+        run: ls -R ./build_output
+
       - name: Upload firmware artifacts
         uses: jason2866/upload-artifact@v2.0.3
         with:
