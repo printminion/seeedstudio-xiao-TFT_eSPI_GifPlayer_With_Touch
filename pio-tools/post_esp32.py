@@ -12,16 +12,14 @@
 # Thanks @jesserockz (esphome) for adapting to use esptool.py with merge_bin
 #
 # Typical layout of the generated file:
-#    Offset | File
-# -  0x1000 | ~\.platformio\packages\framework-arduinoespressif32\tools\sdk\esp32\bin\bootloader_dout_40m.bin
-# -  0x8000 | ~\Tasmota\.pio\build\<env name>\partitions.bin
-# -  0xe000 | ~\.platformio\packages\framework-arduinoespressif32\tools\partitions\boot_app0.bin
-# - 0x10000 | ~\Tasmota\<variants_dir>/<env name>-safeboot.bin
-# - 0xe0000 | ~\Tasmota\.pio\build\<env name>/firmware.bin
-# - 0x3b0000| ~\Tasmota\.pio\build\<env name>/littlefs.bin
+#   Offset  | File
+# - 0x1000  | ~\.platformio\packages\framework-arduinoespressif32\tools\sdk\esp32\bin\bootloader_dout_40m.bin
+# - 0x8000  | ~\App\.pio\build\<env name>\partitions.bin
+# - 0xe000  | ~\.platformio\packages\framework-arduinoespressif32\tools\partitions\boot_app0.bin
+# - 0x10000 | ~\App\<variants_dir>/<env name>-safeboot.bin
+# - 0xe0000 | ~\App\.pio\build\<env name>/firmware.bin
+# - 0x3b0000| ~\App\.pio\build\<env name>/littlefs.bin
 
-env = DefaultEnvironment()
-platform = env.PioPlatform()
 
 from genericpath import exists
 import os
@@ -33,7 +31,13 @@ import shutil
 import subprocess
 import codecs
 from colorama import Fore, Back, Style
-from SCons.Script import COMMAND_LINE_TARGETS
+# from SCons.Script import COMMAND_LINE_TARGETS
+from SCons.Script import (
+    ARGUMENTS, COMMAND_LINE_TARGETS, Builder,
+    DefaultEnvironment)
+
+env = DefaultEnvironment()
+platform = env.PioPlatform()
 
 sys.path.append(join(platform.get_package_dir("tool-esptoolpy")))
 import esptool
@@ -46,7 +50,7 @@ chip = env.get("BOARD_MCU")
 # preserve case of variant folder - it is case senecetive
 # mcu_build_variant = env.BoardConfig().get("build.variant", "").lower()
 mcu_build_variant = env.BoardConfig().get("build.variant", "")
-flag_custom_sdkconfig = config.has_option("env:"+env["PIOENV"], "custom_sdkconfig")
+flag_custom_sdkconfig = config.has_option("env:" + env["PIOENV"], "custom_sdkconfig")
 flag_board_sdkconfig = env.BoardConfig().get("espidf.custom_sdkconfig", "")
 
 # Copy safeboots firmwares in place when running in Github
@@ -54,42 +58,52 @@ github_actions = os.getenv('GITHUB_ACTIONS')
 extra_flags = ''.join([element.replace("-D", " ") for element in env.BoardConfig().get("build.extra_flags", "")])
 build_flags = ''.join([element.replace("-D", " ") for element in env.GetProjectOption("build_flags")])
 
-if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and flag_custom_sdkconfig == False and flag_board_sdkconfig == "":
+if (
+        "CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and flag_custom_sdkconfig == False and flag_board_sdkconfig == "":
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-solo1")
     if github_actions and os.path.exists("./firmware/firmware"):
-        shutil.copytree("./firmware/firmware", "/home/runner/.platformio/packages/framework-arduino-solo1/variants/tasmota", dirs_exist_ok=True)
+        shutil.copytree("./firmware/firmware",
+                        "/home/runner/.platformio/packages/framework-arduino-solo1/variants/tasmota",
+                        dirs_exist_ok=True)
         if variants_dir:
             shutil.copytree("./firmware/firmware", variants_dir, dirs_exist_ok=True)
-elif ("CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags) and flag_custom_sdkconfig == False and flag_board_sdkconfig == "":
+elif (
+        "CORE32ITEAD" in extra_flags or "FRAMEWORK_ARDUINO_ITEAD" in build_flags) and flag_custom_sdkconfig == False and flag_board_sdkconfig == "":
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduino-ITEAD")
     if github_actions and os.path.exists("./firmware/firmware"):
-        shutil.copytree("./firmware/firmware", "/home/runner/.platformio/packages/framework-arduino-ITEAD/variants/tasmota", dirs_exist_ok=True)
+        shutil.copytree("./firmware/firmware",
+                        "/home/runner/.platformio/packages/framework-arduino-ITEAD/variants/tasmota",
+                        dirs_exist_ok=True)
         if variants_dir:
             shutil.copytree("./firmware/firmware", variants_dir, dirs_exist_ok=True)
 else:
     FRAMEWORK_DIR = platform.get_package_dir("framework-arduinoespressif32")
     if github_actions and os.path.exists("./firmware/firmware"):
-        shutil.copytree("./firmware/firmware", "/home/runner/.platformio/packages/framework-arduinoespressif32/variants/tasmota", dirs_exist_ok=True)
+        shutil.copytree("./firmware/firmware",
+                        "/home/runner/.platformio/packages/framework-arduinoespressif32/variants/tasmota",
+                        dirs_exist_ok=True)
         if variants_dir:
             shutil.copytree("./firmware/firmware", variants_dir, dirs_exist_ok=True)
 
 # Copy pins_arduino.h to variants folder
 if variants_dir:
     mcu_build_variant_path = join(FRAMEWORK_DIR, "variants", mcu_build_variant, "pins_arduino.h")
-    custom_variant_build = join(env.subst("$PROJECT_DIR"), variants_dir , mcu_build_variant, "pins_arduino.h")
-    os.makedirs(join(env.subst("$PROJECT_DIR"), variants_dir , mcu_build_variant), exist_ok=True)
+    custom_variant_build = join(env.subst("$PROJECT_DIR"), variants_dir, mcu_build_variant, "pins_arduino.h")
+    os.makedirs(join(env.subst("$PROJECT_DIR"), variants_dir, mcu_build_variant), exist_ok=True)
     shutil.copy(mcu_build_variant_path, custom_variant_build)
 
 if not variants_dir:
-    variants_dir = join(FRAMEWORK_DIR, "variants", "tasmota")
+    # variants_dir = join(FRAMEWORK_DIR, "variants", "tasmota")
+    variants_dir = join(FRAMEWORK_DIR, "variants", "app")
     env.BoardConfig().update("build.variants_dir", variants_dir)
+
 
 def esp32_detect_flashsize():
     uploader = env.subst("$UPLOADER")
     if not "upload" in COMMAND_LINE_TARGETS:
-        return "4MB",False
+        return "4MB", False
     if not "esptool" in uploader:
-        return "4MB",False
+        return "4MB", False
     else:
         esptoolpy = join(platform.get_package_dir("tool-esptoolpy") or "", "esptool.py")
         esptoolpy_flags = ["flash_id"]
@@ -106,22 +120,24 @@ def esp32_detect_flashsize():
                     if detected_flash_size > stored_flash_size:
                         env.BoardConfig().update("upload.flash_size", size)
                         return size, True
-            return "4MB",False
+            return "4MB", False
         except subprocess.CalledProcessError as exc:
             print(Fore.YELLOW + "Did get chip info failed with " + str(exc))
-            return "4MB",False
+            return "4MB", False
+
 
 flash_size_from_esp, flash_size_was_overridden = esp32_detect_flashsize()
 
+
 def patch_partitions_bin(size_string):
-    partition_bin_path = join(env.subst("$BUILD_DIR"),"partitions.bin")
+    partition_bin_path = join(env.subst("$BUILD_DIR"), "partitions.bin")
     with open(partition_bin_path, 'r+b') as file:
         binary_data = file.read(0xb0)
         import hashlib
         bin_list = list(binary_data)
-        size_string = int(size_string[2:],16)
+        size_string = int(size_string[2:], 16)
         size_string = f"{size_string:08X}"
-        size = codecs.decode(size_string, 'hex_codec') # 0xc50000 -> [00,c5,00,00]
+        size = codecs.decode(size_string, 'hex_codec')  # 0xc50000 -> [00,c5,00,00]
         bin_list[0x89] = size[2]
         bin_list[0x8a] = size[1]
         bin_list[0x8b] = size[0]
@@ -129,28 +145,41 @@ def patch_partitions_bin(size_string):
         partition_data = bytes(bin_list) + result.digest()
         file.seek(0)
         file.write(partition_data)
-        print("New partition hash:",result.digest().hex())
+        print("New partition hash:", result.digest().hex())
+
 
 def esp32_create_chip_string(chip):
-    tasmota_platform_org = env.subst("$BUILD_DIR").split(os.path.sep)[-1]
-    tasmota_platform = tasmota_platform_org.split('-')[0]
-    if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and "tasmota32-safeboot" not in tasmota_platform_org and "tasmota32solo1" not in tasmota_platform_org and flag_custom_sdkconfig == False:
-        print(Fore.YELLOW + "Unexpected naming convention in this build environment:" + Fore.RED, tasmota_platform_org)
+    print(Fore.GREEN + "esp32_create_chip_string:" + chip)
+    app_platform_org = env.subst("$BUILD_DIR").split(os.path.sep)[-1]
+    app_platform = app_platform_org.split('-')[0]
+    print(Fore.GREEN + "app_platform_org:" + app_platform_org)
+    print(Fore.GREEN + "app_platform:" + app_platform)
+
+    if ("CORE32SOLO1" in extra_flags or "FRAMEWORK_ARDUINO_SOLO1" in build_flags) and "tasmota32-safeboot" not in app_platform_org and "tasmota32solo1" not in app_platform_org and flag_custom_sdkconfig == False:
+        print(Fore.YELLOW + "Unexpected naming convention in this build environment:" + Fore.RED, app_platform_org)
         print(Fore.YELLOW + "Expected build environment name like " + Fore.GREEN + "'tasmota32solo1-whatever-you-want'")
-        print(Fore.YELLOW + "Please correct your actual build environment, to avoid undefined behavior in build process!!")
-        tasmota_platform = "tasmota32solo1"
-        return tasmota_platform
-    if "tasmota" + chip[3:] not in tasmota_platform: # check + fix for a valid name like 'tasmota' + '32c3'
-        tasmota_platform = "tasmota" + chip[3:]
+        print(
+            Fore.YELLOW + "Please correct your actual build environment, to avoid undefined behavior in build process!!")
+        app_platform = "tasmota32solo1"
+        return app_platform
+
+    if "tasmota" + chip[3:] not in app_platform:  # check + fix for a valid name like 'tasmota' + '32c3'
+        app_platform = "tasmota" + chip[3:]
         if "-DUSE_USB_CDC_CONSOLE" not in env.BoardConfig().get("build.extra_flags"):
-            print(Fore.YELLOW + "Unexpected naming convention in this build environment:" + Fore.RED, tasmota_platform_org)
-            print(Fore.YELLOW + "Expected build environment name like " + Fore.GREEN + "'tasmota" + chip[3:] + "-whatever-you-want'")
-            print(Fore.YELLOW + "Please correct your actual build environment, to avoid undefined behavior in build process!!")
-    return tasmota_platform
+            print(Fore.YELLOW + "Unexpected naming convention in this build environment:" + Fore.RED,
+                  app_platform_org)
+            print(Fore.YELLOW + "Expected build environment name like " + Fore.GREEN + "'tasmota" + chip[
+                                                                                                    3:] + "-whatever-you-want'")
+            print(
+                Fore.YELLOW + "Please correct your actual build environment, to avoid undefined behavior in build process!!")
+
+    print(Fore.GREEN + "app_platform:result:" + app_platform)
+    return app_platform
+
 
 def esp32_build_filesystem(fs_size):
     files = env.GetProjectOption("custom_files_upload").splitlines()
-    filesystem_dir = join(env.subst("$BUILD_DIR"),"littlefs_data")
+    filesystem_dir = join(env.subst("$BUILD_DIR"), "littlefs_data")
     if not os.path.exists(filesystem_dir):
         os.makedirs(filesystem_dir)
     print("Creating filesystem with content:")
@@ -160,13 +189,13 @@ def esp32_build_filesystem(fs_size):
         if "http" and "://" in file:
             response = requests.get(file.split(" ")[0])
             if response.ok:
-                target = join(filesystem_dir,file.split(os.path.sep)[-1])
+                target = join(filesystem_dir, file.split(os.path.sep)[-1])
                 if len(file.split(" ")) > 1:
-                    target = join(filesystem_dir,file.split(" ")[1])
-                    print("Renaming",(file.split(os.path.sep)[-1]).split(" ")[0],"to",file.split(" ")[1])
+                    target = join(filesystem_dir, file.split(" ")[1])
+                    print("Renaming", (file.split(os.path.sep)[-1]).split(" ")[0], "to", file.split(" ")[1])
                 open(target, "wb").write(response.content)
             else:
-                print(Fore.RED + "Failed to download: ",file)
+                print(Fore.RED + "Failed to download: ", file)
             continue
         if os.path.isdir(file):
             shutil.copytree(file, filesystem_dir, dirs_exist_ok=True)
@@ -176,15 +205,18 @@ def esp32_build_filesystem(fs_size):
         print("No files added -> will NOT create littlefs.bin and NOT overwrite fs partition!")
         return False
     tool = env.subst(env["MKFSTOOL"])
-    cmd = (tool,"-c",filesystem_dir,"-s",fs_size,join(env.subst("$BUILD_DIR"),"littlefs.bin"))
+    cmd = (tool, "-c", filesystem_dir, "-s", fs_size, join(env.subst("$BUILD_DIR"), "littlefs.bin"))
     returncode = subprocess.call(cmd, shell=False)
     # print(returncode)
     return True
 
+
 def esp32_fetch_safeboot_bin(tasmota_platform):
+    print(Fore.GREEN + "esp32_fetch_safeboot_bin:" + tasmota_platform)
+
     safeboot_fw_url = "http://ota.tasmota.com/tasmota32/release/" + tasmota_platform + "-safeboot.bin"
     safeboot_fw_name = join(variants_dir, tasmota_platform + "-safeboot.bin")
-    if(exists(safeboot_fw_name)):
+    if exists(safeboot_fw_name):
         print("safeboot binary already in place.")
         return True
     print("Will download safeboot binary from URL:")
@@ -197,10 +229,14 @@ def esp32_fetch_safeboot_bin(tasmota_platform):
     except:
         print(Fore.RED + "Download of safeboot binary failed. Please check your Internet connection.")
         print(Fore.RED + "Creation of " + tasmota_platform + "-factory.bin not possible")
-        print(Fore.YELLOW + "Without Internet " + Fore.GREEN + tasmota_platform + "-safeboot.bin" + Fore.YELLOW + " needs to be compiled before " + Fore.GREEN + tasmota_platform)
+        print(
+            Fore.YELLOW + "Without Internet " + Fore.GREEN + tasmota_platform + "-safeboot.bin" + Fore.YELLOW + " needs to be compiled before " + Fore.GREEN + tasmota_platform)
         return False
 
-def esp32_copy_new_safeboot_bin(tasmota_platform,new_local_safeboot_fw):
+
+def esp32_copy_new_safeboot_bin(tasmota_platform, new_local_safeboot_fw):
+    print(Fore.GREEN + "esp32_copy_new_safeboot_bin %s".format(tasmota_platform))
+
     print("Copy new local safeboot firmware to variants dir -> using it for further flashing operations")
     safeboot_fw_name = join(variants_dir, tasmota_platform + "-safeboot.bin")
     if os.path.exists(variants_dir):
@@ -212,15 +248,16 @@ def esp32_copy_new_safeboot_bin(tasmota_platform,new_local_safeboot_fw):
 
 
 def esp32_create_combined_bin(source, target, env):
-    #print("Generating combined binary for serial flashing")
+    print(Fore.GREEN + "esp32_create_combined_bin")
+    print("Generating combined binary for serial flashing")
     # The offset from begin of the file where the app0 partition starts
     # This is defined in the partition .csv file
     # factory_offset = -1      # error code value - currently unused
-    app_offset = 0x10000     # default value for "old" scheme
-    fs_offset = -1           # error code value
+    app_offset = 0x10000  # default value for "old" scheme
+    fs_offset = -1  # error code value
 
     with open(env.BoardConfig().get("build.partitions")) as csv_file:
-        print("Read partitions from ",env.BoardConfig().get("build.partitions"))
+        print("Read partitions from ", env.BoardConfig().get("build.partitions"))
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
         for row in csv_reader:
@@ -230,31 +267,31 @@ def esp32_create_combined_bin(source, target, env):
             else:
                 print(f'{row[0]}   {row[1]}   {row[2]}   {row[3]}   {row[4]}')
                 line_count += 1
-                if(row[0] == 'app0'):
-                    app_offset = int(row[3],base=16)
+                if row[0] == 'app0':
+                    app_offset = int(row[3], base=16)
                 # elif(row[0] == 'factory'):
                 #     factory_offset = int(row[3],base=16)
-                elif(row[0] == 'spiffs'):
+                elif row[0] == 'spiffs':
                     partition_size = row[4]
                     if flash_size_was_overridden:
-                        print(f"Will override fixed FS partition size from {env.BoardConfig().get('build.partitions')}: {partition_size} ...")
-                        partition_size =  hex(int(flash_size_from_esp.split("MB")[0]) * 0x100000 - int(row[3],base=16))
+                        print(
+                            f"Will override fixed FS partition size from {env.BoardConfig().get('build.partitions')}: {partition_size} ...")
+                        partition_size = hex(int(flash_size_from_esp.split("MB")[0]) * 0x100000 - int(row[3], base=16))
                         print(f"... with computed maximum size from connected {env.get('BOARD_MCU')}: {partition_size}")
                         patch_partitions_bin(partition_size)
                     if esp32_build_filesystem(partition_size):
-                        fs_offset = int(row[3],base=16)
-
+                        fs_offset = int(row[3], base=16)
 
     new_file_name = env.subst("$BUILD_DIR/${PROGNAME}.factory.bin")
     firmware_name = env.subst("$BUILD_DIR/${PROGNAME}.bin")
-    tasmota_platform = esp32_create_chip_string(chip)
+    app_platform = esp32_create_chip_string(chip)
 
     if not os.path.exists(variants_dir):
         os.makedirs(variants_dir)
     if "safeboot" in firmware_name:
-        s_flag = esp32_copy_new_safeboot_bin(tasmota_platform,firmware_name)
+        s_flag = esp32_copy_new_safeboot_bin(app_platform, firmware_name)
     else:
-        s_flag = esp32_fetch_safeboot_bin(tasmota_platform)
+        s_flag = esp32_fetch_safeboot_bin(app_platform)
 
     if s_flag:  # check if safeboot firmware is existing
         flash_size = env.BoardConfig().get("upload.flash_size", "4MB")
@@ -275,46 +312,50 @@ def esp32_create_combined_bin(source, target, env):
             flash_size,
         ]
 
+        # https://github.com/esphome/esphome/blob/051fa3a49fe58155e48acfe168349c31c5efb344/esphome/components/esp32/post_build.py.script#L30C5-L30C25
+
         print("    Offset | File")
         for section in sections:
             sect_adr, sect_file = section.split(" ", 1)
             print(f" -  {sect_adr} | {sect_file}")
             cmd += [sect_adr, sect_file]
 
-        # "main" firmware to app0 - mandatory, except we just built a new safeboot bin locally
-        if ("safeboot" not in firmware_name):
-            print(f" - {hex(app_offset)} | {firmware_name}")
-            cmd += [hex(app_offset), firmware_name]
+        cmd += [hex(app_offset), firmware_name]
 
-        else:
-            print("Upload new safeboot binary only")
+        # # "main" firmware to app0 - mandatory, except we just built a new safeboot bin locally
+        # if "safeboot" not in firmware_name:
+        #     print(f" - {hex(app_offset)} | {firmware_name}")
+        #     cmd += [hex(app_offset), firmware_name]
+        # else:
+        #     print("Upload new safeboot binary only")
+        #
+        # upload_protocol = env.subst("$UPLOAD_PROTOCOL")
+        # if (upload_protocol == "esptool") and (fs_offset != -1):
+        #     fs_bin = join(env.subst("$BUILD_DIR"), "littlefs.bin")
+        #     if exists(fs_bin):
+        #         before_reset = env.BoardConfig().get("upload.before_reset", "default_reset")
+        #         after_reset = env.BoardConfig().get("upload.after_reset", "hard_reset")
+        #         print(f" - {hex(fs_offset)}| {fs_bin}")
+        #         cmd += [hex(fs_offset), fs_bin]
+        #         env.Replace(
+        #             UPLOADERFLAGS=[
+        #                 "--chip", chip,
+        #                 "--port", '"$UPLOAD_PORT"',
+        #                 "--baud", "$UPLOAD_SPEED",
+        #                 "--before", before_reset,
+        #                 "--after", after_reset,
+        #                 "write_flash", "-z",
+        #                 "--flash_mode", "${__get_board_flash_mode(__env__)}",
+        #                 "--flash_freq", "${__get_board_f_flash(__env__)}",
+        #                 "--flash_size", flash_size
+        #             ],
+        #             UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS ' + " ".join(cmd[7:])
+        #         )
+        #         print(
+        #             "Will use custom upload command for flashing operation to add file system defined for this build target.")
 
-        upload_protocol = env.subst("$UPLOAD_PROTOCOL")
-        if(upload_protocol == "esptool") and (fs_offset != -1):
-            fs_bin = join(env.subst("$BUILD_DIR"),"littlefs.bin")
-            if exists(fs_bin):
-                before_reset = env.BoardConfig().get("upload.before_reset", "default_reset")
-                after_reset = env.BoardConfig().get("upload.after_reset", "hard_reset")
-                print(f" - {hex(fs_offset)}| {fs_bin}")
-                cmd += [hex(fs_offset), fs_bin]
-                env.Replace(
-                UPLOADERFLAGS=[
-                "--chip", chip,
-                "--port", '"$UPLOAD_PORT"',
-                "--baud", "$UPLOAD_SPEED",
-                "--before", before_reset,
-                "--after", after_reset,
-                "write_flash", "-z",
-                "--flash_mode", "${__get_board_flash_mode(__env__)}",
-                "--flash_freq", "${__get_board_f_flash(__env__)}",
-                "--flash_size", flash_size
-                ],
-                UPLOADCMD='"$PYTHONEXE" "$UPLOADER" $UPLOADERFLAGS ' + " ".join(cmd[7:])
-                )
-                print("Will use custom upload command for flashing operation to add file system defined for this build target.")
-
-        if("safeboot" not in firmware_name):
-            #print('Using esptool.py arguments: %s' % ' '.join(cmd))
+        if "safeboot" not in firmware_name:
+            print('Using esptool.py arguments: %s' % ' '.join(cmd))
             esptool.main(cmd)
 
 
