@@ -29,7 +29,7 @@ def bin_map_copy(source, target, env):
     print(Fore.GREEN + "Firmware name: {}".format(firmware_name))
 
     if env["PIOPLATFORM"] == "espressif32":
-        if("safeboot" in firmware_name):
+        if "safeboot" in firmware_name:
             SAFEBOOT_SIZE = firsttarget.stat().st_size
             if SAFEBOOT_SIZE > 851967:
                 print(Fore.RED + "!!! Tasmota safeboot size is too big with {} bytes. Max size is 851967 bytes !!! ".format(
@@ -48,21 +48,37 @@ def bin_map_copy(source, target, env):
     print(Fore.GREEN + "firsttarget: {}".format(firsttarget))
 
     # check if new target files exist and remove if necessary
-    # for f in [map_file, bin_file, one_bin_file]:
-    for f in [map_file, bin_file]:
+    for f in [map_file, bin_file, one_bin_file]:
         if f.is_file():
             f.unlink()
 
+    source_map_path = None
+    try:
+        source_map_path = tasmotapiolib.get_source_map_path(env)
+    except:
+        print(Fore.RED + "Could not get source map path!")
+
+    # check if source file exists and print warning if not
+    for f in [firsttarget, factory, source_map_path]:
+        if not f.is_file():
+            print(Fore.RED + "File does not exist: %s" % f)
+        else:
+            print(Fore.GREEN + "File exists: %s" % f)
+
     # copy firmware.bin and map to final destination
+    print(Fore.GREEN + "copy firmware.bin and map to final destination")
     shutil.copy(firsttarget, bin_file)
     if env["PIOPLATFORM"] == "espressif32":
         # the map file is needed later for firmware-metrics.py
-        shutil.copy(tasmotapiolib.get_source_map_path(env), map_file)
-        # if ("safeboot" not in firmware_name):
-        #     shutil.copy(factory, one_bin_file)
+        print(Fore.GREEN + "Copy map file - skip")
+        # shutil.copy(source_map_path, map_file)
+        if "safeboot" not in firmware_name:
+            shutil.copy(factory, one_bin_file)
     else:
+        print(Fore.GREEN + "Copy map file 2")
         map_firm = join(env.subst("$BUILD_DIR")) + os.sep + "firmware.map"
         print(Fore.GREEN + "Map file: {}".format(map_firm))
-        shutil.copy(tasmotapiolib.get_source_map_path(env), map_firm)
-        shutil.move(tasmotapiolib.get_source_map_path(env), map_file)
+        shutil.copy(source_map_path, map_firm)
+        shutil.move(source_map_path, map_file)
+
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", bin_map_copy)
