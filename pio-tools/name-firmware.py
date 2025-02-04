@@ -48,7 +48,7 @@ def bin_map_copy(source, target, env):
     print(Fore.GREEN + "firsttarget: {}".format(firsttarget))
 
     # check if new target files exist and remove if necessary
-    for f in [map_file, bin_file, one_bin_file]:
+    for f in [bin_file, one_bin_file]:
         if f.is_file():
             f.unlink()
 
@@ -59,8 +59,8 @@ def bin_map_copy(source, target, env):
         print(Fore.RED + "Could not get source map path!")
 
     # check if source file exists and print warning if not
-    for f in [firsttarget, factory, source_map_path]:
-        if not f.is_file():
+    for f in [map_file, firsttarget, factory, source_map_path]:
+        if f is not None and not f.is_file():
             print(Fore.RED + "File does not exist: %s" % f)
         else:
             print(Fore.GREEN + "File exists: %s" % f)
@@ -71,14 +71,16 @@ def bin_map_copy(source, target, env):
     if env["PIOPLATFORM"] == "espressif32":
         # the map file is needed later for firmware-metrics.py
         print(Fore.GREEN + "Copy map file - skip")
-        # shutil.copy(source_map_path, map_file)
+        if source_map_path is not None:
+            shutil.copy(source_map_path, map_file)
         if "safeboot" not in firmware_name:
             shutil.copy(factory, one_bin_file)
     else:
         print(Fore.GREEN + "Copy map file 2")
         map_firm = join(env.subst("$BUILD_DIR")) + os.sep + "firmware.map"
         print(Fore.GREEN + "Map file: {}".format(map_firm))
-        shutil.copy(source_map_path, map_firm)
-        shutil.move(source_map_path, map_file)
+        if source_map_path is not None:
+            shutil.copy(source_map_path, map_firm)
+            shutil.move(source_map_path, map_file)
 
 env.AddPostAction("$BUILD_DIR/${PROGNAME}.bin", bin_map_copy)
