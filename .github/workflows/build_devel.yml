@@ -41,6 +41,8 @@ jobs:
         run: |
           pip install wheel
           pip install -U platformio
+          #platformio upgrade --dev
+          platformio update
 
       - name: Add SHA to footer
         run: |
