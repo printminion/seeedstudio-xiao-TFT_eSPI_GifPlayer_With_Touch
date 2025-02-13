@@ -31,20 +31,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Add SHA to footer
         run: |
-          #pip install wheel
-          #pip install -U platformio
-          #pio pkg update
-          curl -fsSL -o get-platformio.py https://raw.githubusercontent.com/platformio/platformio-core-installer/master/get-platformio.py
-          python3 get-platformio.py
+          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
+          SHA=${COMMIT_SHA_LONG::7}
+          sed -i -e "s/APP_SHA_SHORT/APP_SHA_SHORT \"$SHA\"/g" ./src/include/version.h
 
       - name: Run PlatformIO
+        id: build
         run: platformio run -e ${{ matrix.variant }}
 
       - uses: jason2866/upload-artifact@v2.0.3
