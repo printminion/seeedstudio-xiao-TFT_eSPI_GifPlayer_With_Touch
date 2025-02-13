@@ -32,18 +32,20 @@ jobs:
         with:
           ref: development
 
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
-      - name: Install dependencies
-        run: |
-          #pip install wheel
-          #pip install -U platformio
-          #pio pkg update
-          curl -fsSL -o get-platformio.py https://raw.githubusercontent.com/platformio/platformio-core-installer/master/get-platformio.py
-          python3 get-platformio.py
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
 
       - name: Add SHA to footer
         run: |
