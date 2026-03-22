@@ -1,0 +1,62 @@
+name: Build CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - development
+    paths:
+      - '**.c'
+      - '**.cpp'
+      - '**.be'
+      - '**.h'
+      - '**.hpp'
+      - '**.ino'
+      - '**.json'
+      - '**.properties'
+      - 'pio-tools/*.py'
+      - '**.ini'
+      - '.github/workflows/build_all_the_things.yml'
+
+jobs:
+  base-images:
+    runs-on: ubuntu-latest
+    if: github.repository == 'printminion/seeedstudio-xiao-TFT_eSPI_GifPlayer_With_Touch'
+    strategy:
+      fail-fast: true
+      matrix:
+        variant:
+          - app_seeed_xiao_esp32c3-seeed_touch_104030087
+          - app_seeed_xiao_esp32s3-seeed_touch_104030087
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO Core
+        run: pip install --upgrade platformio
+
+      - name: Add SHA to footer
+        run: |
+          COMMIT_SHA_LONG=$(git rev-parse --short HEAD || echo "")
+          SHA=${COMMIT_SHA_LONG::7}
+          sed -i -e "s/APP_SHA_SHORT/APP_SHA_SHORT \"$SHA\"/g" ./src/include/version.h
+
+      - name: Run PlatformIO
+        id: build
+        run: platformio run -e ${{ matrix.variant }}
+
+      - uses: jason2866/upload-artifact@v2.0.3
+        with:
+          name: firmware ${{ matrix.variant }}
+          path: ./build_output

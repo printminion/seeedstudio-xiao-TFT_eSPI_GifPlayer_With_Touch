@@ -7,6 +7,7 @@ Components:
 - [Studio XIAO ESP32S3](https://www.seeedstudio.com/Seeed-XIAO-ESP32C3-p-5431.html) tiny MCU board with Wi-Fi and Bluetooth5.0, battery charge supported, power efficiency and rich Interface
 
 Support me: [Buy Me A Coffee](https://www.buymeacoffee.com/printminion)
+[![donate](https://img.shields.io/badge/donate-PayPal-blue.svg)](https://paypal.me/printminion)
 
 # 3d printed case
 Enclosure for [Seeed Studio 1.28 Round Display](https://www.seeedstudio.com/Seeed-Studio-Round-Display-for-XIAO-p-5638.html?queryID=928f4e218d4eaf5f2a77c841f268b17f&objectID=5638&indexName=bazaar_retailer_products) *(240x240 pixels)* and [Studio XIAO ESP32C3](https://www.seeedstudio.com/Seeed-XIAO-ESP32C3-p-5431.html) or [Studio XIAO ESP32S3](https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html).
